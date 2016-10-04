@@ -33,14 +33,22 @@ response = table.scan(
 items = response['Items']
 
 translator = google_translate.GoogleTranslator()
+detected = {}
+translated = {}
 for item in items:
-	print(item["tweetid"])
-	print(item["status"])
-	b = TextBlob(item["status"])
-	lang = translator.detect(item["status"])
-	print(lang)
-	if(lang != "english" and lang != None ):
-		status_en = translator.translate(item["status"],"english")
-		print(status_en)
+	tid = item["tweetid"]
+	input_s = item["status"]
+	lang = translator.detect(input_s)
+	if(lang != None):
+		status = input_s
+		if(lang != "english"):
+			print(status)
+			status = translator.translate(input_s,"english")
+			detected[tid]=lang
+			translated[tid]=status
+		if(status!= None):
+			print(status)
+			testimonial = TextBlob(status)
+			print(testimonial.sentiment.polarity)
 #print(items)
 print(len(items))
