@@ -1,5 +1,7 @@
 import boto3,time
 from boto3.dynamodb.conditions import Key, Attr
+from textblob import TextBlob
+import google_translate
 # Get the service resource.
 dynamodb = boto3.resource('dynamodb')
 
@@ -22,11 +24,23 @@ response = table.query(
 items = response['Items']
 print(items)
 pe = "tweetid,epoch,#s"
-ean = { "#s": "status", }
+ean = { "#s": "status"}
 response = table.scan(
-    FilterExpression=Attr('epoch').gte(1474373105),
+    FilterExpression=Attr('epoch').gte(1474381105),
     ProjectionExpression=pe,
      ExpressionAttributeNames=ean
 )
 items = response['Items']
-print(items)
+
+translator = google_translate.GoogleTranslator()
+for item in items:
+	print(item["tweetid"])
+	print(item["status"])
+	b = TextBlob(item["status"])
+	lang = translator.detect(item["status"])
+	print(lang)
+	if(lang != "english" and lang != None ):
+		status_en = translator.translate(item["status"],"english")
+		print(status_en)
+#print(items)
+print(len(items))
