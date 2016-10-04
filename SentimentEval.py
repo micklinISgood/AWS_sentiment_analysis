@@ -1,4 +1,4 @@
-import boto3,time,re
+import boto3,time,re,decimal
 from boto3.dynamodb.conditions import Key, Attr
 from textblob import TextBlob
 import google_translate
@@ -16,13 +16,13 @@ table = dynamodb.Table('Tweets')
 # This will cause a request to be made to DynamoDB and its attribute
 # values will be set based on the response.
 
-print(table.creation_date_time)
-print(int(time.time()))
-response = table.query(
-    KeyConditionExpression=Key('tweetid').eq(778203325023989761)
-)
-items = response['Items']
-print(items)
+# print(table.creation_date_time)
+# print(int(time.time()))
+# response = table.query(
+#      KeyConditionExpression=Key('tweetid').eq(778203325023989761)
+#  )
+#  items = response['Items']
+# print(items)
 pe = "tweetid,epoch,#s"
 ean = { "#s": "status"}
 response = table.scan(
@@ -61,4 +61,27 @@ for item in items:
 			sentiment_score[tid] = testimonial.sentiment.polarity
 #print(items)
 print keyw
+rtable = dynamodb.Table('keyword')
+print(rtable.creation_date_time)
+with rtable.batch_writer() as batch:
+    for k,v in keyw.items():
+    	ctime = long(time.time())
+   
+    	length = len(v)
+    
+    	# _item = {}
+    	# _item["keyword"] = k
+    	# _item["tweetid"] = v
+    	# _item["epoch"] = time
+    	# _item["count"] = len(v)
+    	if len(v) > 0:
+        	batch.put_item(
+        		Item={
+        	'keyword': k,
+            'tweetid': v,
+            'epoch': ctime,
+            'count': length
+
+            })
+
 print(len(items))
