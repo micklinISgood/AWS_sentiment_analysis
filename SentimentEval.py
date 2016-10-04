@@ -1,4 +1,4 @@
-import boto3,time
+import boto3,time,re
 from boto3.dynamodb.conditions import Key, Attr
 from textblob import TextBlob
 import google_translate
@@ -35,12 +35,15 @@ items = response['Items']
 translator = google_translate.GoogleTranslator()
 detected = {}
 translated = {}
+sentiment_score = {}
+keyw = {}
 for item in items:
 	tid = item["tweetid"]
 	input_s = item["status"]
 	lang = translator.detect(input_s)
 	if(lang != None):
-		status = input_s
+		# remove hashtag for translation convenience
+		status = input_s.replace("#", "")
 		if(lang != "english"):
 			print(status)
 			status = translator.translate(input_s,"english")
@@ -49,6 +52,13 @@ for item in items:
 		if(status!= None):
 			print(status)
 			testimonial = TextBlob(status)
-			print(testimonial.sentiment.polarity)
+			for np in testimonial.noun_phrases:
+					if np in keyw.keys():
+						keyw[np].append(tid) 
+					else:
+						keyw[np]=[tid]
+			
+			sentiment_score[tid] = testimonial.sentiment.polarity
 #print(items)
+print keyw
 print(len(items))
