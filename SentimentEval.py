@@ -1,4 +1,5 @@
-import boto3
+import boto3,time
+from boto3.dynamodb.conditions import Key, Attr
 # Get the service resource.
 dynamodb = boto3.resource('dynamodb')
 
@@ -12,4 +13,20 @@ table = dynamodb.Table('Tweets')
 # Print out some data about the table.
 # This will cause a request to be made to DynamoDB and its attribute
 # values will be set based on the response.
+
 print(table.creation_date_time)
+print(int(time.time()))
+response = table.query(
+    KeyConditionExpression=Key('tweetid').eq(778203325023989761)
+)
+items = response['Items']
+print(items)
+pe = "tweetid,epoch,#s"
+ean = { "#s": "status", }
+response = table.scan(
+    FilterExpression=Attr('epoch').gte(1474373105),
+    ProjectionExpression=pe,
+     ExpressionAttributeNames=ean
+)
+items = response['Items']
+print(items)
