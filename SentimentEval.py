@@ -54,25 +54,43 @@ for item in items:
 			testimonial = TextBlob(status)
 			for np in testimonial.noun_phrases:
 					if np in keyw.keys():
-						keyw[np].add(int(tid)) 
+						keyw[np].add(long(tid)) 
 					else:
-						keyw[np]=set([int(tid)])
+						keyw[np]=set([long(tid)])
 			
 			sentiment_score[tid] = testimonial.sentiment.polarity
 #print(items)
 # print keyw
 rtable = dynamodb.Table('keyword')
 # print(rtable.creation_date_time)
+project = "tweetid"
 with rtable.batch_writer() as batch:
     for k,v in keyw.items():
-    	ctime = long(time.time())
-    	length = len(v)
-        batch.put_item(
-        	Item={
-        	'keyword': k,
-            'tweetid': v,
-            'epoch': ctime,
-            'count': length
-         })
+    	
+		ctime = long(time.time())
+		print(k)
+		res = rtable.query(KeyConditionExpression=Key('keyword').eq(k), ProjectionExpression = project)
+		
+		res_item=res['Items']
+		
+		if(len(res_item)==0):
+			length = len(v)
+			rtable.put_item(
+			Item={
+			'keyword': k,
+			'tweetid': v,
+			'epoch': ctime,
+			'count': length})
+		else:
+			# print(res_item)
+			exist_set = res_item[0]["tweetid"]
+			new_set = exist_set | v
+			length = len(new_set)
+			rtable.put_item(
+				Item={
+				'keyword': k,
+				'tweetid': new_set,
+				'epoch': ctime,
+				'count': length})
 
 print(len(items))
