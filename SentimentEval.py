@@ -83,7 +83,7 @@ while endtime > terminate_time:
 						    }
 						)
 					except:
-						print(tid+","+lang)
+						print(str(tid)+","+lang)
 				else:
 					try:
 						table.update_item(
