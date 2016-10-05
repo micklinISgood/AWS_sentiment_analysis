@@ -41,9 +41,6 @@ while endtime > terminate_time:
 	items = response['Items']
 	#print(len(items))
 	translator = google_translate.GoogleTranslator()
-	detected = {}
-	before_trans = ""
-	sentiment_score = {}
 	keyw = {}
 	for item in items:
 		tid = item["tweetid"]
@@ -58,7 +55,7 @@ while endtime > terminate_time:
 				trans = True
 				status = translator.translate(input_s,"english")
 
-			if(len(status) >0 ):
+			if(status != None ):
 				# print(status)
 				testimonial = TextBlob(status)
 				for np in testimonial.noun_phrases:
@@ -86,7 +83,7 @@ while endtime > terminate_time:
 						    }
 						)
 					except:
-						print(tid)
+						print(tid+","+lang)
 				else:
 					try:
 						table.update_item(
