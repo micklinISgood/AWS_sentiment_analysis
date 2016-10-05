@@ -26,9 +26,9 @@ table = dynamodb.Table('Tweets')
 pe = "tweetid,epoch,#s"
 ean = { "#s": "status"}
 response = table.scan(
-    FilterExpression=Attr('epoch').gte(1474381105),
-    ProjectionExpression=pe,
-     ExpressionAttributeNames=ean
+    FilterExpression = Attr('epoch').gte(1474381105),
+    ProjectionExpression = pe,
+    ExpressionAttributeNames = ean
 )
 items = response['Items']
 
@@ -45,43 +45,34 @@ for item in items:
 		# remove hashtag for translation convenience
 		status = input_s.replace("#", "")
 		if(lang != "english"):
-			print(status)
+			# print(status)
 			status = translator.translate(input_s,"english")
 			detected[tid]=lang
 			translated[tid]=status
 		if(status!= None):
-			print(status)
+			# print(status)
 			testimonial = TextBlob(status)
 			for np in testimonial.noun_phrases:
 					if np in keyw.keys():
-						keyw[np].append(tid) 
+						keyw[np].add(int(tid)) 
 					else:
-						keyw[np]=[tid]
+						keyw[np]=set([int(tid)])
 			
 			sentiment_score[tid] = testimonial.sentiment.polarity
 #print(items)
-print keyw
+# print keyw
 rtable = dynamodb.Table('keyword')
-print(rtable.creation_date_time)
+# print(rtable.creation_date_time)
 with rtable.batch_writer() as batch:
     for k,v in keyw.items():
     	ctime = long(time.time())
-   
     	length = len(v)
-    
-    	# _item = {}
-    	# _item["keyword"] = k
-    	# _item["tweetid"] = v
-    	# _item["epoch"] = time
-    	# _item["count"] = len(v)
-    	if len(v) > 0:
-        	batch.put_item(
-        		Item={
+        batch.put_item(
+        	Item={
         	'keyword': k,
             'tweetid': v,
             'epoch': ctime,
             'count': length
-
-            })
+         })
 
 print(len(items))
