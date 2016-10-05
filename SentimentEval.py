@@ -42,7 +42,7 @@ while endtime > terminate_time:
 	#print(len(items))
 	translator = google_translate.GoogleTranslator()
 	detected = {}
-	translated = {}
+	before_trans = ""
 	sentiment_score = {}
 	keyw = {}
 	for item in items:
@@ -57,8 +57,7 @@ while endtime > terminate_time:
 				# print(status)
 				trans = True
 				status = translator.translate(input_s,"english")
-				detected[tid]=lang
-				translated[tid]=status
+
 			if(status!= None):
 				# print(status)
 				testimonial = TextBlob(status)
@@ -68,33 +67,39 @@ while endtime > terminate_time:
 						else:
 							keyw[np]=set([tid])
 				
-				sentiment_score[tid] = int(testimonial.sentiment.polarity*5 +5)
-				if sentiment_score[tid] == None: sentiment_score[tid]=5
+				sentiment_score = int(testimonial.sentiment.polarity*5 +5)
+				# if sentiment_score[tid] == None: sentiment_score[tid]=5
 				# print(sentiment_score[tid])
 				if trans:
 					# print(tid)
-					table.update_item(
-					    Key={
-					        'tweetid': tid,
-					    },
-					    UpdateExpression='SET lang= :val1 , status_en=:val2 , sentiment = :val3',
-					    ExpressionAttributeValues={
-					        ':val1': detected[tid],
-					        ':val2': translated[tid],
-					        ':val3': sentiment_score[tid]
-					    }
-					)
+					try:
+						table.update_item(
+						    Key={
+						        'tweetid': tid,
+						    },
+						    UpdateExpression='SET lang= :val1 , status_en=:val2 , sentiment = :val3',
+						    ExpressionAttributeValues={
+						        ':val1': lang,
+						        ':val2': status,
+						        ':val3': sentiment_score
+						    }
+						)
+					except:
+						print(tid)
 				else:
-					table.update_item(
-					    Key={
-					        'tweetid': tid,
-					    },
-					    UpdateExpression='SET lang= :val1 ,sentiment = :val3',
-					    ExpressionAttributeValues={
-						':val1': "english",
-					        ':val3': sentiment_score[tid]
-					    }
-					)
+					try:
+						table.update_item(
+						    Key={
+						        'tweetid': tid,
+						    },
+						    UpdateExpression='SET lang= :val1 ,sentiment = :val3',
+						    ExpressionAttributeValues={
+							':val1': lang,
+						    ':val3': sentiment_score
+						    }
+						)
+					except:
+						print(tid)
 
 
 	rtable = dynamodb.Table('keyword')
@@ -113,22 +118,28 @@ while endtime > terminate_time:
 			#if key doesn't exist, put new item directly
 			if len(res_item)==0:
 				length = len(v)
-				rtable.put_item(
-				Item={
-				'keyword': k,
-				'tweetid': v,
-				'epoch': ctime,
-				'count': length})
+				try:
+					rtable.put_item(
+					Item={
+					'keyword': k,
+					'tweetid': v,
+					'epoch': ctime,
+					'count': length})
+				except:
+						print(v)
 			#union exsiting set and new set. set new len = len(new_set)
 			else:
 				# print(res_item)
 				exist_set = res_item[0]["tweetid"]
 				new_set = exist_set | v
 				length = len(new_set)
-				rtable.put_item(
-					Item={
-					'keyword': k,
-					'tweetid': new_set,
-					'epoch': ctime,
-					'count': length})
+				try:
+					rtable.put_item(
+						Item={
+						'keyword': k,
+						'tweetid': new_set,
+						'epoch': ctime,
+						'count': length})
+				except:
+						print(v)
 	time.sleep(60)
