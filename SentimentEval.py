@@ -1,7 +1,8 @@
-import boto3,time,re,decimal
+import boto3,time
 from boto3.dynamodb.conditions import Key, Attr
 from textblob import TextBlob
 import google_translate
+from decimal import *
 # Get the service resource.
 dynamodb = boto3.resource('dynamodb')
 
@@ -21,7 +22,7 @@ table = dynamodb.Table('Tweets')
 # response = table.query(
 #      KeyConditionExpression=Key('tweetid').eq(778203325023989761)
 #  )
-#  items = response['Items']
+# items = response['Items']
 # print(items)
 pe = "tweetid,epoch,#s"
 ean = { "#s": "status"}
@@ -41,11 +42,13 @@ for item in items:
 	tid = item["tweetid"]
 	input_s = item["status"]
 	lang = translator.detect(input_s)
+	trans = False
 	if(lang != None):
 		# remove hashtag for translation convenience
 		status = input_s.replace("#", "")
 		if(lang != "english"):
 			# print(status)
+			trans = True
 			status = translator.translate(input_s,"english")
 			detected[tid]=lang
 			translated[tid]=status
@@ -54,13 +57,42 @@ for item in items:
 			testimonial = TextBlob(status)
 			for np in testimonial.noun_phrases:
 					if np in keyw.keys():
-						keyw[np].add(long(tid)) 
+						keyw[np].add(tid) 
 					else:
-						keyw[np]=set([long(tid)])
+						keyw[np]=set([tid])
 			
-			sentiment_score[tid] = testimonial.sentiment.polarity
+			sentiment_score[tid] = int(testimonial.sentiment.polarity*5 +5)
+			# print(sentiment_score[tid])
+			if trans:
+				table.update_item(
+				    Key={
+				        'tweetid': tid,
+				    },
+				    UpdateExpression='SET lang= :val1 , status_en=:val2 , sentiment = :val3',
+				    ExpressionAttributeValues={
+				        ':val1': detected[tid],
+				        ':val2': translated[tid],
+				        ':val3': sentiment_score[tid]
+				    }
+				)
+			else:
+				table.update_item(
+				    Key={
+				        'tweetid': tid,
+				    },
+				    UpdateExpression='SET sentiment = :val3',
+				    ExpressionAttributeValues={
+				        ':val3': sentiment_score[tid]
+				    }
+				)
+
 #print(items)
 # print keyw
+# response = table.query(
+#      KeyConditionExpression=Key('tweetid').eq(778203325023989761)
+#  )
+# items = response['Items']
+# print(items)
 rtable = dynamodb.Table('keyword')
 # print(rtable.creation_date_time)
 project = "tweetid"
@@ -68,12 +100,13 @@ with rtable.batch_writer() as batch:
     for k,v in keyw.items():
     	
 		ctime = long(time.time())
-		print(k)
+		# print(k)
 		res = rtable.query(KeyConditionExpression=Key('keyword').eq(k), ProjectionExpression = project)
 		
 		res_item=res['Items']
 		
-		if(len(res_item)==0):
+		#if key doesn't exist, put new item directly
+		if len(res_item)==0:
 			length = len(v)
 			rtable.put_item(
 			Item={
@@ -81,6 +114,7 @@ with rtable.batch_writer() as batch:
 			'tweetid': v,
 			'epoch': ctime,
 			'count': length})
+		#union exsiting set and new set. set new len = len(new_set)
 		else:
 			# print(res_item)
 			exist_set = res_item[0]["tweetid"]
@@ -92,5 +126,3 @@ with rtable.batch_writer() as batch:
 				'tweetid': new_set,
 				'epoch': ctime,
 				'count': length})
-
-print(len(items))
