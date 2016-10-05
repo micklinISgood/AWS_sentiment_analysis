@@ -47,7 +47,9 @@ while endtime > terminate_time:
 		input_s = item["status"]
 		lang = translator.detect(input_s)
 		trans = False
+	
 		if(lang != None):
+		
 			# remove hashtag for translation convenience
 			status = input_s.replace("#", "")
 			if(lang != "english"):
@@ -55,7 +57,7 @@ while endtime > terminate_time:
 				trans = True
 				status = translator.translate(input_s,"english")
 
-			if(status != None ):
+			if(status != None):
 				# print(status)
 				testimonial = TextBlob(status)
 				for np in testimonial.noun_phrases:
@@ -68,7 +70,7 @@ while endtime > terminate_time:
 				# if sentiment_score[tid] == None: sentiment_score[tid]=5
 				# print(sentiment_score[tid])
 				# print(status)
-				if trans:
+				if trans and status != None:
 					# print(tid)
 					try:
 						table.update_item(
