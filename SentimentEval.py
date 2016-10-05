@@ -24,8 +24,8 @@ table = dynamodb.Table('Tweets')
 #  )
 # items = response['Items']
 # print(items)
-s_time = 1474381104
-one_day = 60*10
+s_time = 1474370105 
+one_day = 60*60*24
 terminate_time = s_time - one_day
 endtime = s_time
 while endtime > terminate_time:
@@ -39,7 +39,7 @@ while endtime > terminate_time:
 	)
 	endtime -= 201
 	items = response['Items']
-	# print(len(items))
+	#print(len(items))
 	translator = google_translate.GoogleTranslator()
 	detected = {}
 	translated = {}
@@ -69,6 +69,7 @@ while endtime > terminate_time:
 							keyw[np]=set([tid])
 				
 				sentiment_score[tid] = int(testimonial.sentiment.polarity*5 +5)
+				if sentiment_score[tid] == None: sentiment_score[tid]=5
 				# print(sentiment_score[tid])
 				if trans:
 					# print(tid)
@@ -88,8 +89,9 @@ while endtime > terminate_time:
 					    Key={
 					        'tweetid': tid,
 					    },
-					    UpdateExpression='SET sentiment = :val3',
+					    UpdateExpression='SET lang= :val1 ,sentiment = :val3',
 					    ExpressionAttributeValues={
+						':val1': "english",
 					        ':val3': sentiment_score[tid]
 					    }
 					)
@@ -98,9 +100,10 @@ while endtime > terminate_time:
 	rtable = dynamodb.Table('keyword')
 	# print(rtable.creation_date_time)
 	project = "tweetid"
+	
 	with rtable.batch_writer() as batch:
 		for k,v in keyw.items():
-			# time.sleep(15)
+			#time.sleep(15)
 			ctime = long(time.time())
 			# print(k)
 			res = rtable.query(KeyConditionExpression=Key('keyword').eq(k), ProjectionExpression = project)
@@ -128,3 +131,4 @@ while endtime > terminate_time:
 					'tweetid': new_set,
 					'epoch': ctime,
 					'count': length})
+	time.sleep(60)
