@@ -24,7 +24,7 @@ table = dynamodb.Table('Tweets')
 #  )
 # items = response['Items']
 # print(items)
-s_time = 1474370105 
+s_time = 1474369886 
 one_day = 60*60*24
 terminate_time = s_time - one_day
 endtime = s_time
@@ -58,7 +58,7 @@ while endtime > terminate_time:
 				trans = True
 				status = translator.translate(input_s,"english")
 
-			if(status!= None):
+			if(len(status) >0 ):
 				# print(status)
 				testimonial = TextBlob(status)
 				for np in testimonial.noun_phrases:
@@ -70,6 +70,7 @@ while endtime > terminate_time:
 				sentiment_score = int(testimonial.sentiment.polarity*5 +5)
 				# if sentiment_score[tid] == None: sentiment_score[tid]=5
 				# print(sentiment_score[tid])
+				# print(status)
 				if trans:
 					# print(tid)
 					try:
